@@ -1,7 +1,7 @@
 FROM tomcat:8.0-alpine
-LABEL maintainer="chinniprashanth001@gmail.com"
+LABEL maintainer="manojdesen@gmail.com"
 
-ADD target/hello-world-war-1.0.0.war /usr/local/tomcat/webapps/
+ADD target/helloworld-1.0-SNAPSHOT.jar /usr/local/tomcat/webapps/
 
 EXPOSE 8088
 CMD ["catalina.sh", "run"]
