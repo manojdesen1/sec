@@ -40,7 +40,7 @@ stages {
       }
        stage ('Publish Artifact') {
         steps {
-          nexusArtifactUploader artifacts: [[artifactId: 'hello-world-war', classifier: '', file: "target/hello-world-war-1.0.0.war", type: 'war']], credentialsId: 'nexus-cred', groupId: 'com.efsavage', nexusUrl: "${nexus_url}", nexusVersion: 'nexus3', protocol: 'http', repository: 'feature', version: "${artifact_version}"
+          nexusArtifactUploader artifacts: [[artifactId: 'helloworld-jar', classifier: '', file: "target/helloworld-1.0-SNAPSHOT.jar", type: 'war']], credentialsId: 'nexus-cred', groupId: 'com.efsavage', nexusUrl: "${nexus_url}", nexusVersion: 'nexus3', protocol: 'http', repository: 'feature', version: "${artifact_version}"
         }
       }
       stage ('Build Docker Image'){
