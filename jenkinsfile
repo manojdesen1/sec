@@ -1,32 +1,35 @@
-pipeline{
-    agent any 
-    tools{
-        maven "maven"
-        jdk "java8"
-        
-    }
-    environment {
+pipeline {
+  agent any
 
-      sonar_url = 'http://172.31.18.70:9000'
+  tools {
+    jdk 'java'
+    maven 'maven'
+  }
+  
+  environment {
+
+      sonar_url = 'http://34.70.149.228:9000'
       sonar_username = 'admin'
       sonar_password = 'admin'
-      
+      nexus_url = '34.70.149.228:8081'
+      artifact_version = '4.0.0'
+
  }
-    
-    stages{
-        stage('git checlout'){
-            steps{
-                git branch: 'master',
-            
-                url: 'https://github.com/manojdesen1/sec.git'
-            }
-        }
-        stage('maven bulid'){
-            steps{
-                sh 'mvn clean install'
-            }
-        }
-        stage ('Sonarqube Analysis'){
+ 
+
+stages {
+    stage('Git checkout'){
+      steps {
+        git branch: 'main',
+        url: 'https://github.com/manojdesen1/sec.git'
+      }
+    }
+    stage('Maven build'){
+      steps {
+        sh 'mvn clean install'
+      }
+    }
+  stage ('Sonarqube Analysis'){
            steps {
            withSonarQubeEnv('sonarqube') {
            sh '''
@@ -34,7 +37,37 @@ pipeline{
            '''
            }
          }
-      } 
-        
-    }
+      }
+       stage ('Publish Artifact') {
+        steps {
+          nexusArtifactUploader artifacts: [[artifactId: 'hello-world-war', classifier: '', file: "target/hello-world-war-1.0.0.war", type: 'war']], credentialsId: 'nexus-cred', groupId: 'com.efsavage', nexusUrl: "${nexus_url}", nexusVersion: 'nexus3', protocol: 'http', repository: 'feature', version: "${artifact_version}"
+        }
+      }
+      stage ('Build Docker Image'){
+        steps {
+          sh '''
+          cd ${WORKSPACE}
+          docker build -t gcr.io/symmetric-lock-357601/sec --file=Dockerfile ${WORKSPACE}
+          '''
+        }
+      }
+      stage ('Publish Docker Image'){
+        steps {
+          sh '''
+          docker push gcr.io/symmetric-lock-357601/sec
+          '''
+        }
+      }
+  stage ('Deploy to kubernetes'){
+        steps{
+          script {
+            sh "kubectl config use-context gke_symmetric-lock-357601_us-central1-c_batch-14"
+            sh "cd ${WORKSPACE}"
+             sh "kubectl delete -f '${WORKSPACE}'/k8s/deployment.yaml"
+            sh "kubectl create -f '${WORKSPACE}'/k8s/deployment.yaml"
+            sh "kubectl create -f '${WORKSPACE}'/k8s/service.yaml"
+          }
+         }
+        }
+ }
 }
